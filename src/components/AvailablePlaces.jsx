@@ -1,20 +1,41 @@
 import { useState, useEffect } from "react";
 import Places from "./Places.jsx";
-
-const places = localStorage.getItem("places");
+import Error from "./Error.jsx";
 
 export default function AvailablePlaces({ onSelectPlace }) {
+  const [isFetching, setIsFetching] = useState(false);
   const [availablePlaces, setAvailablePlaces] = useState([]);
+  const [error, setError] = useState();
 
   useEffect(() => {
     async function fetchData() {
-      const response = await fetch("http://localhost:3000/places");
-      const redData = await response.json();
-      setAvailablePlaces(redData.places);
+      setIsFetching(true);
+
+      try {
+        const response = await fetch("http://localhost:3000/placess");
+        const resData = await response.json();
+
+        // Response
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        setAvailablePlaces(resData.places);
+      } catch (error) {
+        setError({
+          message: error.message || "Could not fetch data, try again later!",
+        });
+      }
+
+      setIsFetching(false);
     }
 
     fetchData();
   }, []);
+
+  if (error) {
+    return <Error title="An Error occured!" message={error.message} />;
+  }
 
   console.log(availablePlaces);
 
@@ -22,7 +43,7 @@ export default function AvailablePlaces({ onSelectPlace }) {
     <Places
       title="Available Places"
       places={availablePlaces}
-      isLoading={false}
+      isLoading={isFetching}
       loadingText="Places data is loading..."
       fallbackText="No places available."
       onSelectPlace={onSelectPlace}
